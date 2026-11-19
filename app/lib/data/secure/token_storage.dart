@@ -8,7 +8,7 @@ import '../remote/api_client.dart';
 /// **Android Keystore** (AES-GCM) o el **Keychain** de iOS. El token JWT nunca
 /// se guarda en SQLite ni en SharedPreferences en texto plano.
 class TokenStorage {
-  TokenStorage({FlutterSecureStorage? storage}) : _storage = storage ?? const FlutterSecureStorage();
+  TokenStorage({FlutterSecureStorage? storage}) : _storage = storage ?? FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
 
