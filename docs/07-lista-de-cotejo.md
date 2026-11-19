@@ -4,7 +4,7 @@
 |---|---|---|---|---|
 | **Hacer** | App Flutter Offline-First | CRUD nube, caché SQLite y sync bidireccional | [`app/`](../app) · [`backend/`](../backend) | ✅ Código completo · ⏳ capturas en dispositivo |
 | **Saber** | Documentación técnica | Modelo de datos, cifrado y reglas del backend | [`docs/`](.) | ✅ |
-| **Ser** | Ética y repositorio Git | Commits continuos y protección de datos | Historial `git log` · [04-seguridad.md](04-seguridad.md) | ✅ (falta publicar en GitHub) |
+| **Ser** | Ética y repositorio Git | Commits continuos y protección de datos | Historial `git log` · [04-seguridad.md](04-seguridad.md) | ✅ [github.com/bleon26/Practica11](https://github.com/bleon26/Practica11) |
 
 ## Hacer — App Flutter Offline-First
 
@@ -36,7 +36,7 @@
 - [x] Mensajes de commit descriptivos (Conventional Commits)
 - [x] **Protección de datos**: sin secretos versionados (`.env`, keystores y `.db` en `.gitignore`), contraseñas con scrypt, token cifrado, purga de datos al cerrar sesión, `allowBackup=false`
 - [x] Aislamiento por usuario verificado con pruebas automáticas
-- [ ] Publicar el repositorio en GitHub y compartir el enlace
+- [x] Repositorio publicado: https://github.com/bleon26/Practica11
 
 ## Blindaje de datos (diapositiva de codificación segura)
 
