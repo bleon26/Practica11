@@ -47,6 +47,17 @@ class TokenStorage {
     await _storage.delete(key: _kUsername);
   }
 
-  /// Cierre de sesión explícito: borra todo.
-  Future<void> clearAll() => _storage.deleteAll();
+  /// Cierre de sesión explícito: borra token, identidad y último UID.
+  /// (Se conserva solo la URL del servidor, que no es un dato personal.)
+  Future<void> clearAll() async {
+    await clearToken();
+    await _storage.delete(key: _kLastUserId);
+  }
+
+  // ------------------------------------------------- URL del servidor
+  static const _kApiUrl = 'api_base_url';
+
+  Future<String?> readApiUrl() => _storage.read(key: _kApiUrl);
+
+  Future<void> saveApiUrl(String url) => _storage.write(key: _kApiUrl, value: url);
 }

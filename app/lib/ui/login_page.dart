@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_services.dart';
-import '../core/config.dart';
 import '../data/remote/api_client.dart';
 
 class LoginPage extends StatefulWidget {
@@ -17,6 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _user = TextEditingController();
   final _pass = TextEditingController();
+  late final _server = TextEditingController(text: widget.services.api.baseUrl);
   bool _registerMode = false;
   bool _loading = false;
   bool _obscure = true;
@@ -26,6 +26,7 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _user.dispose();
     _pass.dispose();
+    _server.dispose();
     super.dispose();
   }
 
@@ -37,6 +38,7 @@ class _LoginPageState extends State<LoginPage> {
     });
     final auth = widget.services.auth;
     try {
+      await auth.setServerUrl(_server.text);
       if (_registerMode) {
         await auth.register(_user.text.trim(), _pass.text);
       } else {
@@ -118,8 +120,20 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(_registerMode ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'),
                     ),
                     const SizedBox(height: 16),
-                    Text('Servidor: ${AppConfig.apiBaseUrl}',
-                        textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
+                    TextFormField(
+                      controller: _server,
+                      keyboardType: TextInputType.url,
+                      decoration: const InputDecoration(
+                        labelText: 'Servidor (IP de la PC con el backend)',
+                        helperText: 'Ej. http://10.10.62.19:3000 · misma red Wi-Fi',
+                        prefixIcon: Icon(Icons.dns_outlined),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) {
+                        final uri = Uri.tryParse(ApiClient.normalizeBaseUrl(v ?? ''));
+                        return uri != null && uri.host.isNotEmpty ? null : 'URL inválida';
+                      },
+                    ),
                   ],
                 ),
               ),

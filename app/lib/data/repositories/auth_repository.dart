@@ -17,7 +17,15 @@ class AuthRepository {
   Future<String?> currentToken() async => session.value?.token;
 
   Future<void> restore() async {
+    final savedUrl = await tokens.readApiUrl();
+    if (savedUrl != null) api.baseUrl = savedUrl;
     session.value = await tokens.readSession();
+  }
+
+  /// Cambia y recuerda la dirección del backend (IP de la PC en la red local).
+  Future<void> setServerUrl(String url) async {
+    api.baseUrl = url;
+    await tokens.saveApiUrl(api.baseUrl);
   }
 
   Future<void> login(String username, String password) => _start(api.login(username, password));

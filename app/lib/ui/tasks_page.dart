@@ -80,6 +80,33 @@ class _TasksPageState extends State<TasksPage> with WidgetsBindingObserver {
     ));
   }
 
+  Future<void> _editServer() async {
+    final controller = TextEditingController(text: _s.api.baseUrl);
+    final url = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Servidor'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.url,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'URL del backend',
+            helperText: 'IP de la PC en la misma red Wi-Fi',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, controller.text), child: const Text('Guardar')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (url == null || url.trim().isEmpty) return;
+    await _s.auth.setServerUrl(url);
+    await _manualSync();
+  }
+
   Future<void> _logout() async {
     final pending = await _s.local.countPending();
     if (!mounted) return;
@@ -114,9 +141,14 @@ class _TasksPageState extends State<TasksPage> with WidgetsBindingObserver {
         actions: [
           _SyncIndicator(services: _s),
           PopupMenuButton<String>(
-            onSelected: (v) => v == 'sync' ? _manualSync() : _logout(),
+            onSelected: (v) => switch (v) {
+              'sync' => _manualSync(),
+              'server' => _editServer(),
+              _ => _logout(),
+            },
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'sync', child: ListTile(leading: Icon(Icons.sync), title: Text('Sincronizar ahora'))),
+              PopupMenuItem(value: 'server', child: ListTile(leading: Icon(Icons.dns_outlined), title: Text('Servidor'))),
               PopupMenuItem(value: 'logout', child: ListTile(leading: Icon(Icons.logout), title: Text('Cerrar sesión'))),
             ],
           ),
@@ -130,6 +162,25 @@ class _TasksPageState extends State<TasksPage> with WidgetsBindingObserver {
               stream: _pending,
               builder: (_, snap) => OfflineBanner(online: online, pending: snap.data ?? 0),
             ),
+          ),
+          ValueListenableBuilder<SyncStatus>(
+            valueListenable: _s.sync.status,
+            builder: (context, st, _) {
+              if (st.phase != SyncPhase.error || !_s.connectivity.online.value) return const SizedBox.shrink();
+              final scheme = Theme.of(context).colorScheme;
+              return Material(
+                color: scheme.errorContainer,
+                child: ListTile(
+                  dense: true,
+                  leading: Icon(Icons.sync_problem, color: scheme.onErrorContainer),
+                  title: Text('No se pudo sincronizar con ${_s.api.baseUrl}',
+                      style: TextStyle(color: scheme.onErrorContainer)),
+                  subtitle: Text('${st.message ?? ''}\nTus cambios siguen guardados en el dispositivo.',
+                      style: TextStyle(color: scheme.onErrorContainer)),
+                  trailing: TextButton(onPressed: _editServer, child: const Text('Servidor')),
+                ),
+              );
+            },
           ),
           Expanded(
             child: RefreshIndicator(

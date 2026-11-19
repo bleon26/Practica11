@@ -171,12 +171,36 @@ test('Validación: rechaza id no UUID, fechas sin zona y fechas futuras', async 
   }
 });
 
+test('Consola nube: login por formulario con cookie firmada HttpOnly', async () => {
+  const anon = await api('GET', '/console');
+  assert.equal(anon.status, 200);
+  assert.match(anon.text, /action="\/console\/login"/);
+  assert.equal((await api('GET', '/console/data')).status, 401);
+
+  const form = (body) => fetch(base + '/console/login', {
+    method: 'POST', redirect: 'manual',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body,
+  });
+  assert.equal((await form('user=admin&password=mala')).status, 401);
+
+  const ok = await form('user=admin&password=admin-pass-123');
+  assert.equal(ok.status, 303);
+  const cookie = ok.headers.get('set-cookie');
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /SameSite=Strict/);
+  const session = cookie.split(';')[0];
+  const data = await api('GET', '/console/data', { headers: { Cookie: session } });
+  assert.equal(data.status, 200);
+  const forged = await api('GET', '/console/data', { headers: { Cookie: 'console_session=9999999999.falsa' } });
+  assert.equal(forged.status, 401);
+});
+
 test('Consola nube protegida con Basic Auth', async () => {
-  assert.equal((await api('GET', '/console')).status, 401);
+  assert.equal((await api('GET', '/console/data')).status, 401);
   const auth = 'Basic ' + Buffer.from('admin:admin-pass-123').toString('base64');
   const ok = await api('GET', '/console/data', { headers: { Authorization: auth } });
   assert.equal(ok.status, 200);
   assert.ok(Array.isArray(ok.json.tasks));
   const wrong = 'Basic ' + Buffer.from('admin:otra').toString('base64');
-  assert.equal((await api('GET', '/console', { headers: { Authorization: wrong } })).status, 401);
+  assert.equal((await api('GET', '/console/data', { headers: { Authorization: wrong } })).status, 401);
 });

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SOLO compilaciones DEBUG (laboratorio): se permite HTTP hacia cualquier
+  host para alcanzar el backend en la IP local de la PC (p. ej. 10.10.62.19).
+  La compilación RELEASE usa src/main/res/xml/network_security_config.xml,
+  que exige HTTPS.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

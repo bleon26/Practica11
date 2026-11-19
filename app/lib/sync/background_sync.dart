@@ -34,7 +34,7 @@ Future<bool> runBackgroundSync() async {
 
   final db = AppDatabase();
   final local = TaskLocalDataSource(db);
-  final api = ApiClient(tokenProvider: () async => session.token);
+  final api = ApiClient(baseUrl: await tokens.readApiUrl(), tokenProvider: () async => session.token);
   try {
     await SyncRepository(local: local, remote: api).sync();
     return true;

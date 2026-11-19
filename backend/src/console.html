@@ -37,6 +37,9 @@
   <small>Consola nube · Semana 11</small>
   <h1>Registros sincronizados en el backend</h1>
   <div class="meta" id="meta">Cargando…</div>
+  <form method="post" action="/console/logout" style="margin-top:8px">
+    <button type="submit" style="background:none;border:1px solid #1e2b47;color:#94a3b8;border-radius:8px;padding:4px 10px;cursor:pointer">Cerrar sesión</button>
+  </form>
 </header>
 <main>
   <div class="stats" id="stats"></div>
@@ -84,7 +87,8 @@
 
   async function refresh() {
     try {
-      const res = await fetch('/console/data', { cache: 'no-store' });
+      const res = await fetch('/console/data', { cache: 'no-store', credentials: 'same-origin' });
+      if (res.status === 401) { location.reload(); return; } // sesión expirada -> login
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       const active = data.tasks.filter(t => !t.is_deleted).length;

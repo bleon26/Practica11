@@ -71,15 +71,26 @@ class ApiClient implements TaskRemoteApi {
     String? baseUrl,
     http.Client? client,
     Future<String?> Function()? tokenProvider,
-  })  : _baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
+  })  : _baseUrl = normalizeBaseUrl(baseUrl ?? AppConfig.apiBaseUrl),
         _client = client ?? http.Client(),
         _tokenProvider = tokenProvider;
 
-  final String _baseUrl;
+  String _baseUrl;
   final http.Client _client;
   final Future<String?> Function()? _tokenProvider;
 
   String get baseUrl => _baseUrl;
+  set baseUrl(String value) => _baseUrl = normalizeBaseUrl(value);
+
+  /// `10.10.62.19:3000/` -> `http://10.10.62.19:3000`
+  static String normalizeBaseUrl(String url) {
+    var u = url.trim();
+    if (!u.startsWith('http://') && !u.startsWith('https://')) u = 'http://$u';
+    while (u.endsWith('/')) {
+      u = u.substring(0, u.length - 1);
+    }
+    return u;
+  }
 
   // ------------------------------------------------------------------ Auth
   Future<AuthSession> login(String username, String password) =>

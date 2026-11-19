@@ -54,7 +54,15 @@ powershell -ExecutionPolicy Bypass -File tool\setup.ps1
 flutter run --dart-define=API_URL=http://10.0.2.2:3000
 ```
 
-**Celular físico por USB** (redirige el puerto del celular a la PC):
+**Celular físico por Wi-Fi (recomendado):** el celular y la PC deben estar en la misma red. Usa la IP de la PC (`ipconfig` → Wi-Fi → IPv4):
+
+```powershell
+flutter run --dart-define=API_URL=http://10.10.62.19:3000
+```
+
+La dirección también se puede cambiar **dentro de la app**: campo «Servidor» en el login, o menú ⋮ → «Servidor». Se guarda en el almacenamiento seguro. Las compilaciones *debug* permiten HTTP hacia cualquier IP (`src/debug/res/xml/network_security_config.xml`); la *release* exige HTTPS.
+
+**Celular físico por USB** (redirige el puerto del celular a la PC; se pierde si se desconecta el cable):
 
 ```powershell
 adb reverse tcp:3000 tcp:3000

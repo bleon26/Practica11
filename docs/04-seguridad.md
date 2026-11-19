@@ -23,7 +23,7 @@
 7. **Anti fuerza bruta**: límite de 20 intentos por minuto por IP en `/auth/*`, y mensaje genérico «Usuario o contraseña incorrectos».
 8. **Cabeceras**: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, y CSP en la consola.
 9. **Errores**: los `500` no exponen trazas al cliente.
-10. **Consola nube**: protegida con Basic Auth (`ADMIN_USER` / `ADMIN_PASSWORD`). Queda **deshabilitada** si no se define contraseña. Renderiza con `textContent` para evitar XSS con títulos escritos por usuarios.
+10. **Consola nube**: login por formulario (`ADMIN_USER` / `ADMIN_PASSWORD`) que emite una cookie de sesión **firmada con HMAC**, `HttpOnly`, `SameSite=Strict`, con `Path=/console` y 8 h de vida. También acepta Basic Auth para `curl`. Queda **deshabilitada** si no se define contraseña. Renderiza con `textContent` para evitar XSS con títulos escritos por usuarios.
 
 Todas estas reglas están cubiertas por pruebas automáticas en [`backend/test/api.test.js`](../backend/test/api.test.js): aislamiento entre usuarios, `alg=none`, validación y consola protegida.
 

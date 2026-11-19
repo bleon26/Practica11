@@ -35,7 +35,47 @@ function send(res, status, body, extraHeaders = {}) {
   res.end(isString ? body : JSON.stringify(body));
 }
 
-function readJson(req) {
+const CONSOLE_CSP = {
+  'Content-Security-Policy': "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action 'self'",
+};
+
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+}[c]));
+
+function loginPage(error) {
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Consola Nube · Acceso</title>
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f172a;color:#e2e8f0;
+       font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  form{background:#111c33;border:1px solid #1e2b47;border-radius:14px;padding:28px;width:min(340px,calc(100vw - 32px));display:grid;gap:14px}
+  small{color:#14b8a6;letter-spacing:.12em;font-weight:700;text-transform:uppercase;font-size:11px}
+  h1{margin:0;font-size:20px} label{display:grid;gap:6px;font-size:13px;color:#94a3b8}
+  input{padding:10px 12px;border-radius:8px;border:1px solid #1e2b47;background:#0f172a;color:#e2e8f0;font-size:15px}
+  button{padding:11px;border:0;border-radius:8px;background:#0ea5e9;color:#04121f;font-weight:700;font-size:15px;cursor:pointer}
+  .err{color:#ef4444;font-size:13px;margin:0}
+</style></head><body>
+<form method="post" action="/console/login">
+  <small>Consola nube · Semana 11</small><h1>Acceso de administrador</h1>
+  ${error ? `<p class="err">${escapeHtml(error)}</p>` : ''}
+  <label>Usuario<input name="user" autocomplete="username" required autofocus></label>
+  <label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label>
+  <button type="submit">Entrar</button>
+</form></body></html>`;
+}
+
+async function readJson(req) {
+  const text = await readText(req);
+  if (text.length === 0) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new HttpError(400, 'JSON inválido');
+  }
+}
+
+function readText(req) {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
@@ -48,14 +88,7 @@ function readJson(req) {
       }
       chunks.push(chunk);
     });
-    req.on('end', () => {
-      if (chunks.length === 0) return resolve({});
-      try {
-        resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));
-      } catch {
-        reject(new HttpError(400, 'JSON inválido'));
-      }
-    });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     req.on('error', reject);
   });
 }
@@ -95,16 +128,45 @@ function createApp(options = {}) {
     return user;
   }
 
-  function requireAdmin(req) {
+  // ---- Consola: sesión por formulario (cookie firmada) o Basic Auth (curl/pruebas)
+  const CONSOLE_COOKIE = 'console_session';
+  const CONSOLE_SESSION_SECONDS = 8 * 60 * 60;
+  const consoleSig = (exp) =>
+    crypto.createHmac('sha256', `${config.jwtSecret}:console`).update(String(exp)).digest('base64url');
+
+  function adminCredentialsOk(user, pass) {
+    return Boolean(safeEqual(user, config.adminUser) & safeEqual(pass, config.adminPassword));
+  }
+
+  function issueConsoleCookie() {
+    const exp = Math.floor(Date.now() / 1000) + CONSOLE_SESSION_SECONDS;
+    return `${CONSOLE_COOKIE}=${exp}.${consoleSig(exp)}; Path=/console; HttpOnly; SameSite=Strict; Max-Age=${CONSOLE_SESSION_SECONDS}`;
+  }
+
+  function hasConsoleCookie(req) {
+    const raw = (req.headers.cookie ?? '').split(';').map((c) => c.trim())
+      .find((c) => c.startsWith(`${CONSOLE_COOKIE}=`));
+    if (!raw) return false;
+    const [exp, sig] = raw.slice(CONSOLE_COOKIE.length + 1).split('.');
+    if (!exp || !sig || Number(exp) < Math.floor(Date.now() / 1000)) return false;
+    const expected = Buffer.from(consoleSig(exp));
+    const given = Buffer.from(sig);
+    return given.length === expected.length && crypto.timingSafeEqual(given, expected);
+  }
+
+  function isAdmin(req) {
     if (!config.adminPassword) throw new HttpError(503, 'Consola deshabilitada: define ADMIN_PASSWORD');
+    if (hasConsoleCookie(req)) return true;
     const header = req.headers.authorization ?? '';
-    if (!header.startsWith('Basic ')) throw new HttpError(401, 'Credenciales requeridas');
+    if (!header.startsWith('Basic ')) return false;
     const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
     const idx = decoded.indexOf(':');
-    const user = decoded.slice(0, idx);
-    const pass = decoded.slice(idx + 1);
-    const ok = safeEqual(user, config.adminUser) & safeEqual(pass, config.adminPassword);
-    if (!ok) throw new HttpError(401, 'Credenciales inválidas');
+    if (idx < 0) return false;
+    return adminCredentialsOk(decoded.slice(0, idx), decoded.slice(idx + 1));
+  }
+
+  function requireAdmin(req) {
+    if (!isAdmin(req)) throw new HttpError(401, 'Credenciales requeridas');
   }
 
   function issueToken(user) {
@@ -219,8 +281,25 @@ function createApp(options = {}) {
     }
 
     // ---------- Consola nube (administración / evidencia)
+    if (method === 'POST' && pathname === '/console/login') {
+      if (authLimiter(ip)) throw new HttpError(429, 'Demasiados intentos, espera un minuto');
+      if (!config.adminPassword) throw new HttpError(503, 'Consola deshabilitada: define ADMIN_PASSWORD');
+      const form = new URLSearchParams(await readText(req));
+      if (!adminCredentialsOk(form.get('user') ?? '', form.get('password') ?? '')) {
+        return send(res, 401, loginPage('Usuario o contraseña incorrectos'), CONSOLE_CSP);
+      }
+      res.writeHead(303, { Location: '/console', 'Set-Cookie': issueConsoleCookie(), 'Cache-Control': 'no-store' });
+      return res.end();
+    }
+    if (method === 'POST' && pathname === '/console/logout') {
+      res.writeHead(303, {
+        Location: '/console',
+        'Set-Cookie': `${CONSOLE_COOKIE}=; Path=/console; HttpOnly; SameSite=Strict; Max-Age=0`,
+      });
+      return res.end();
+    }
     if (method === 'GET' && pathname === '/console') {
-      requireAdmin(req);
+      if (!isAdmin(req)) return send(res, 200, loginPage(), CONSOLE_CSP);
       return send(res, 200, CONSOLE_HTML, {
         'Content-Security-Policy': "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'",
       });
@@ -249,10 +328,7 @@ function createApp(options = {}) {
     handle(req, res)
       .catch((err) => {
         if (err instanceof HttpError || err instanceof ValidationError) {
-          const headers = err.status === 401 && req.url.startsWith('/console')
-            ? { 'WWW-Authenticate': 'Basic realm="consola-nube", charset="UTF-8"' }
-            : {};
-          return send(res, err.status, { error: err.message }, headers);
+          return send(res, err.status, { error: err.message });
         }
         console.error('[error]', err);
         return send(res, 500, { error: 'Error interno' }); // sin filtrar detalles
