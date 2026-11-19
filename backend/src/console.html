@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consola Nube · Offline-First</title>
+<style>
+  :root { --bg:#0f172a; --card:#111c33; --line:#1e2b47; --text:#e2e8f0; --muted:#94a3b8;
+          --blue:#0ea5e9; --teal:#14b8a6; --amber:#f59e0b; --red:#ef4444; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:20px 24px 8px; }
+  header small { color:var(--teal); letter-spacing:.12em; font-weight:700; text-transform:uppercase; font-size:11px; }
+  h1 { margin:4px 0 0; font-size:22px; }
+  .meta { color:var(--muted); font-size:12px; margin-top:6px; }
+  main { padding:12px 24px 40px; display:grid; gap:20px; }
+  .stats { display:flex; gap:12px; flex-wrap:wrap; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 16px; min-width:140px; }
+  .stat b { display:block; font-size:24px; color:var(--teal); }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  section h2 { font-size:14px; margin:0; padding:12px 16px; border-bottom:1px solid var(--line); }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { color:var(--muted); font-weight:600; font-size:12px; }
+  td.title { white-space:normal; min-width:180px; }
+  .pill { padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; }
+  .ok { background:#14b8a622; color:var(--teal); } .del { background:#ef444422; color:var(--red); }
+  .client { background:#0ea5e922; color:var(--blue); } .server { background:#f59e0b22; color:var(--amber); }
+  code { font-size:12px; color:var(--muted); }
+  .flash { animation: flash 1.6s ease-out; }
+  @keyframes flash { from { background:#14b8a644; } to { background:transparent; } }
+</style>
+</head>
+<body>
+<header>
+  <small>Consola nube · Semana 11</small>
+  <h1>Registros sincronizados en el backend</h1>
+  <div class="meta" id="meta">Cargando…</div>
+</header>
+<main>
+  <div class="stats" id="stats"></div>
+  <section><h2>Tareas (más recientes primero, por revisión del servidor)</h2>
+    <div class="scroll"><table id="tasks"><thead><tr>
+      <th>rev</th><th>Usuario</th><th>Título</th><th>Estado</th><th>version</th>
+      <th>updated_at (cliente)</th><th>Recibido en nube</th><th>UUID</th></tr></thead><tbody></tbody></table></div>
+  </section>
+  <section><h2>Colisiones detectadas (LWW + control de versiones)</h2>
+    <div class="scroll"><table id="conflicts"><thead><tr>
+      <th>#</th><th>Usuario</th><th>Tarea</th><th>Ganador</th><th>Cliente updated_at</th>
+      <th>Servidor updated_at</th><th>base_version → server version</th><th>Detectado</th></tr></thead><tbody></tbody></table></div>
+  </section>
+  <section><h2>Usuarios</h2>
+    <div class="scroll"><table id="users"><thead><tr>
+      <th>Usuario</th><th>UID</th><th>Tareas activas</th><th>Alta</th></tr></thead><tbody></tbody></table></div>
+  </section>
+</main>
+<script>
+  // Todo el contenido se inserta con textContent (sin innerHTML) para evitar XSS
+  // con títulos escritos por usuarios.
+  const seen = new Set();
+  let first = true;
+  const fmt = (iso) => iso ? new Date(iso).toLocaleString() : '';
+
+  function cell(tr, value, cls) {
+    const td = document.createElement('td');
+    if (cls) td.className = cls;
+    if (value instanceof Node) td.appendChild(value); else td.textContent = value ?? '';
+    tr.appendChild(td);
+  }
+  function pill(text, cls) {
+    const s = document.createElement('span'); s.className = 'pill ' + cls; s.textContent = text; return s;
+  }
+  function code(text) { const c = document.createElement('code'); c.textContent = text; return c; }
+  function fill(id, rows, render) {
+    const body = document.querySelector('#' + id + ' tbody');
+    body.replaceChildren(...rows.map(render));
+  }
+  function stat(label, value) {
+    const d = document.createElement('div'); d.className = 'stat';
+    const b = document.createElement('b'); b.textContent = value;
+    d.append(b, document.createTextNode(label)); return d;
+  }
+
+  async function refresh() {
+    try {
+      const res = await fetch('/console/data', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const active = data.tasks.filter(t => !t.is_deleted).length;
+      document.getElementById('stats').replaceChildren(
+        stat('usuarios', data.users.length), stat('tareas activas', active),
+        stat('borradas (soft delete)', data.tasks.length - active), stat('colisiones', data.conflicts.length));
+
+      fill('tasks', data.tasks, (t) => {
+        const tr = document.createElement('tr');
+        const key = t.id + ':' + t.rev;
+        if (!first && !seen.has(key)) tr.className = 'flash';
+        seen.add(key);
+        cell(tr, t.rev); cell(tr, t.username); cell(tr, t.title, 'title');
+        cell(tr, t.is_deleted ? pill('borrada', 'del') : pill(t.is_done ? 'hecha' : 'pendiente', 'ok'));
+        cell(tr, t.version); cell(tr, t.updated_at); cell(tr, fmt(t.server_updated_at)); cell(tr, code(t.id));
+        return tr;
+      });
+      fill('conflicts', data.conflicts, (c) => {
+        const tr = document.createElement('tr');
+        cell(tr, c.id); cell(tr, c.username); cell(tr, code(c.task_id));
+        cell(tr, pill(c.winner === 'client' ? 'gana cliente' : 'gana servidor', c.winner));
+        cell(tr, c.client_updated_at); cell(tr, c.server_updated_at);
+        cell(tr, (c.client_base_version ?? '—') + ' → ' + c.server_version); cell(tr, fmt(c.detected_at));
+        return tr;
+      });
+      fill('users', data.users, (u) => {
+        const tr = document.createElement('tr');
+        cell(tr, u.username); cell(tr, code(u.id)); cell(tr, u.active_tasks); cell(tr, fmt(u.created_at));
+        return tr;
+      });
+      document.getElementById('meta').textContent =
+        'Actualizado ' + fmt(data.generated_at) + ' · refresco automático cada 3 s';
+      first = false;
+    } catch (e) {
+      document.getElementById('meta').textContent = 'Error al consultar la nube: ' + e.message;
+    }
+  }
+  refresh();
+  setInterval(refresh, 3000);
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "offline-first-tasks-backend",
+  "version": "1.0.0",
+  "description": "Backend cloud para la práctica Offline-First (Semana 11): auth JWT, CRUD de tareas, sync bidireccional idempotente con resolución LWW + control de versiones.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "license": "MIT"
+}

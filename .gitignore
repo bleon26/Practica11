@@ -1,0 +1,37 @@
+# ---------- Node / backend ----------
+node_modules/
+backend/data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.env
+.env.*
+!.env.example
+
+# ---------- Flutter / Dart ----------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+app/android/.gradle/
+app/android/local.properties
+app/android/key.properties
+app/android/**/GeneratedPluginRegistrant.java
+app/android/app/release/
+*.jks
+*.keystore
+app/ios/Flutter/Generated.xcconfig
+app/ios/Pods/
+app/ios/.symlinks/
+
+# ---------- IDE / SO ----------
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
