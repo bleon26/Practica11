@@ -66,7 +66,8 @@ Guía completa (dispositivo físico, APK, inspección de SQLite): [docs/05-guia-
 | Componente | Estado |
 |---|---|
 | Backend: 10 pruebas automáticas + prueba manual con HTTP real | ✅ Pasan (Node 24.20) |
-| App Flutter: `flutter analyze` / `flutter test` | ⏳ Pendiente de ejecutar en un equipo con Flutter 3.38+ |
+| App Flutter: `flutter analyze` / `flutter test` | ✅ 0 errores · 24/24 pruebas (Flutter 3.50.0) |
+| APK instalado en dispositivo físico (moto g54 5G) | ✅ |
 | Escenarios en emulador o dispositivo (modo avión, cierre forzado, reconexión) | ⏳ Pendiente, con capturas en [`docs/evidencias/`](docs/evidencias) |
 
 ## Licencia

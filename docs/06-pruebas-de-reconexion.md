@@ -77,11 +77,15 @@ Usan **SQLite real** (vía `sqflite_common_ffi`) y un backend en memoria con la 
 | `task_model_test.dart` | UUID v4 offline, marca monótona, `toMap`/`fromMap`, JSON remoto |
 | `widget_test.dart` | Indicador visual offline |
 
-> ⚠️ Estas pruebas de Flutter **aún no se han ejecutado**: el equipo donde se generó el proyecto no tenía un SDK de Flutter funcional. Ejecuta `flutter test` y pega aquí el resultado.
+Resultado (19/11/2026, Flutter 3.50.0 / Dart 3.14.0) — **24/24 ✔**:
 
 ```
-(pegar aquí la salida de `flutter test`)
+00:01 +24: All tests passed!
 ```
+
+`flutter analyze`: 0 errores y 0 advertencias. Solo quedan avisos *info* de que `package:flutter/material.dart` está deprecado desde Flutter 3.47 en favor de `material_ui`.
+
+App compilada (`flutter build apk --debug`) e instalada en un **Motorola moto g54 5G** por USB con `adb reverse tcp:3000 tcp:3000`.
 
 ## C. Registro de resultados
 

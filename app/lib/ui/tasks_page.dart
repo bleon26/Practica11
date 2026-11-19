@@ -126,7 +126,7 @@ class _TasksPageState extends State<TasksPage> with WidgetsBindingObserver {
         children: [
           ValueListenableBuilder<bool>(
             valueListenable: _s.connectivity.online,
-            builder: (_, online, __) => StreamBuilder<int>(
+            builder: (_, online, _) => StreamBuilder<int>(
               stream: _pending,
               builder: (_, snap) => OfflineBanner(online: online, pending: snap.data ?? 0),
             ),
@@ -145,7 +145,7 @@ class _TasksPageState extends State<TasksPage> with WidgetsBindingObserver {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 96),
                     itemCount: tasks.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (_, i) => _TaskTile(
                       task: tasks[i],
                       onToggle: () => _s.tasks.toggleDone(tasks[i]),
@@ -224,9 +224,9 @@ class _SyncIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: services.connectivity.online,
-      builder: (_, online, __) => ValueListenableBuilder<SyncStatus>(
+      builder: (_, online, _) => ValueListenableBuilder<SyncStatus>(
         valueListenable: services.sync.status,
-        builder: (_, st, __) {
+        builder: (_, st, _) {
           if (!online) {
             return const Tooltip(message: 'Offline', child: Padding(
               padding: EdgeInsets.all(12), child: Icon(Icons.cloud_off)));
