@@ -81,27 +81,10 @@ class _TasksPageState extends State<TasksPage> with WidgetsBindingObserver {
   }
 
   Future<void> _editServer() async {
-    final controller = TextEditingController(text: _s.api.baseUrl);
     final url = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Servidor'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.url,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'URL del backend',
-            helperText: 'IP de la PC en la misma red Wi-Fi',
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, controller.text), child: const Text('Guardar')),
-        ],
-      ),
+      builder: (_) => _ServerDialog(initial: _s.api.baseUrl),
     );
-    controller.dispose();
     if (url == null || url.trim().isEmpty) return;
     await _s.auth.setServerUrl(url);
     await _manualSync();
@@ -298,6 +281,47 @@ class _SyncIndicator extends StatelessWidget {
           };
         },
       ),
+    );
+  }
+}
+
+/// El controlador vive en el State del diálogo y se libera en dispose(),
+/// DESPUÉS de la animación de cierre (liberarlo antes provoca la aserción
+/// `_dependents.isEmpty`).
+class _ServerDialog extends StatefulWidget {
+  const _ServerDialog({required this.initial});
+  final String initial;
+
+  @override
+  State<_ServerDialog> createState() => _ServerDialogState();
+}
+
+class _ServerDialogState extends State<_ServerDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Servidor'),
+      content: TextField(
+        controller: _controller,
+        keyboardType: TextInputType.url,
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: 'URL del backend',
+          helperText: 'IP de la PC o http://localhost:3000 con cable',
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        FilledButton(onPressed: () => Navigator.pop(context, _controller.text), child: const Text('Guardar')),
+      ],
     );
   }
 }
