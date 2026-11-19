@@ -1,0 +1,32 @@
+name: offline_first_tasks
+description: "Práctica Semana 11 — App Flutter Offline-First: SQLite como fuente única de verdad, WorkManager y sincronización bidireccional."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  # Flutter 3.38+ (Dart 3.10+) — requerido por workmanager 0.10.x
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # --- Stack de la práctica (Paso 1) ---
+  sqflite: ^2.4.2            # Base de datos local (fuente única de verdad)
+  path: ^1.9.1               # Ruta del archivo .db
+  connectivity_plus: ^7.0.0  # Monitor de conectividad (Stream List<ConnectivityResult>)
+  workmanager: ^0.10.0       # Sincronización en segundo plano (Android WorkManager)
+  uuid: ^4.5.1               # Claves primarias generadas offline en el cliente
+
+  # --- Necesarios para "CRUD nube" y "Codificación segura" ---
+  http: ^1.5.0                     # Cliente REST hacia el backend
+  flutter_secure_storage: ^11.0.0  # Cifrado en reposo del token (Keystore / Keychain)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  sqflite_common_ffi: ^2.3.6   # SQLite en escritorio para pruebas unitarias del repositorio
+
+flutter:
+  uses-material-design: true
