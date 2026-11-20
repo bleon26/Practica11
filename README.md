@@ -28,7 +28,7 @@ UI Flutter  ⇄  SQLite local (fuente única de verdad)  ⇄  Backend cloud (seg
 cd backend
 copy .env.example .env        # define JWT_SECRET y ADMIN_PASSWORD
 npm start                     # http://localhost:3000  ·  consola: /console
-npm test                      # 10 pruebas de API
+npm test                      # 11 pruebas de API
 
 # 2) App (requiere Flutter 3.38+)
 cd ..\app
@@ -65,10 +65,11 @@ Guía completa (dispositivo físico, APK, inspección de SQLite): [docs/05-guia-
 
 | Componente | Estado |
 |---|---|
-| Backend: 10 pruebas automáticas + prueba manual con HTTP real | ✅ Pasan (Node 24.20) |
+| Backend: 11 pruebas automáticas + prueba manual con HTTP real | ✅ Pasan (Node 24.20) |
 | App Flutter: `flutter analyze` / `flutter test` | ✅ 0 errores · 24/24 pruebas (Flutter 3.50.0) |
-| APK instalado en dispositivo físico (moto g54 5G) | ✅ |
-| Escenarios en emulador o dispositivo (modo avión, cierre forzado, reconexión) | ⏳ Pendiente, con capturas en [`docs/evidencias/`](docs/evidencias) |
+| APK instalado en dispositivo físico (moto g54 5G): registro, alta de tarea y sync | ✅ Capturas en [06 · sección D](docs/06-pruebas-de-reconexion.md#d-evidencias-en-dispositivo-físico-20112026) |
+| Escenarios con modo avión (offline, cierre forzado, reconexión) | ⏳ Pendiente, con capturas en [`docs/evidencias/`](docs/evidencias) |
+| Documentación en PDF | ✅ [`docs/Documentacion-Practica11.pdf`](docs/Documentacion-Practica11.pdf) |
 
 ## Licencia
 

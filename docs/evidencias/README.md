@@ -12,4 +12,15 @@ Guarda aquí las capturas de pantalla de los escenarios de [06-pruebas-de-recone
 | `05-flutter-test.png` | Salida de `flutter test` |
 | `06-npm-test.png` | Salida de `npm test` del backend |
 
+## Capturas ya incluidas (20/11/2026)
+
+| Archivo | Qué se ve |
+|---|---|
+| `app-01-registro.jpg` | Pantalla de registro con el campo «Servidor» |
+| `app-02-lista-vacia.jpg` | Sesión iniciada, lista vacía y sincronizada |
+| `app-03-nueva-tarea.jpg` | Diálogo «Nueva tarea» (escritura local) |
+| `app-04-tarea-sincronizada.jpg` | Tarea «prueba» sincronizada (`v1`, ícono verde) |
+| `app-05-servidor-caido.jpg` | Backend apagado: error de sync y datos conservados |
+| `nube-01-consola.png` | Consola nube con la tarea recibida |
+
 > No incluyas contraseñas, tokens ni datos personales reales en las capturas.

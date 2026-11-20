@@ -3,15 +3,21 @@ import 'package:sqflite/sqflite.dart';
 
 /// Abre (y crea/migra) la base SQLite local: la **fuente única de verdad**.
 class AppDatabase {
-  AppDatabase({DatabaseFactory? factory, String? path})
+  /// [singleInstance] = `false` abre una conexión nativa propia. Lo usa el
+  /// isolate de WorkManager: en Android sqflite comparte por defecto una sola
+  /// conexión por archivo en todo el proceso, y su `close()` cerraría también
+  /// la de la UI (`DatabaseException(database_closed)`).
+  AppDatabase({DatabaseFactory? factory, String? path, bool singleInstance = true})
       : _factory = factory,
-        _path = path;
+        _path = path,
+        _singleInstance = singleInstance;
 
   static const fileName = 'offline_first.db';
   static const schemaVersion = 1;
 
   final DatabaseFactory? _factory;
   final String? _path;
+  final bool _singleInstance;
   Future<Database>? _opening;
 
   Future<Database> get database => _opening ??= _open();
@@ -24,6 +30,7 @@ class AppDatabase {
       options: OpenDatabaseOptions(
         version: schemaVersion,
         onCreate: _onCreate,
+        singleInstance: _singleInstance,
       ),
     );
   }

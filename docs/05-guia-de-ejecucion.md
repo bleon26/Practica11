@@ -19,7 +19,7 @@
 cd backend
 copy .env.example .env      # editar JWT_SECRET y ADMIN_PASSWORD
 npm start                   # sin npm install: cero dependencias
-npm test                    # 10 pruebas de API
+npm test                    # 11 pruebas de API
 ```
 
 Salida esperada:

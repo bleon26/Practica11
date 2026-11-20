@@ -2,7 +2,7 @@
 
 | Dimensión | Evidencia requerida | Criterio clave | Dónde está | Estado |
 |---|---|---|---|---|
-| **Hacer** | App Flutter Offline-First | CRUD nube, caché SQLite y sync bidireccional | [`app/`](../app) · [`backend/`](../backend) | ✅ Código completo · ⏳ capturas en dispositivo |
+| **Hacer** | App Flutter Offline-First | CRUD nube, caché SQLite y sync bidireccional | [`app/`](../app) · [`backend/`](../backend) | ✅ Código completo · ✅ probado en moto g54 · ⏳ capturas en modo avión |
 | **Saber** | Documentación técnica | Modelo de datos, cifrado y reglas del backend | [`docs/`](.) | ✅ |
 | **Ser** | Ética y repositorio Git | Commits continuos y protección de datos | Historial `git log` · [04-seguridad.md](04-seguridad.md) | ✅ [github.com/bleon26/Practica11](https://github.com/bleon26/Practica11) |
 
@@ -17,6 +17,7 @@
 - [x] **CRUD nube**: crear, leer, actualizar y borrar (lógico) → API REST en [`app.js`](../backend/src/app.js)
 - [x] **Single Source of Truth**: la UI solo escucha Streams de SQLite
 - [x] Estrategias contra colisiones: **LWW** + **control de versiones**
+- [x] App instalada en dispositivo físico: registro, alta de tarea, PUSH y consola nube → [06 · sección D](06-pruebas-de-reconexion.md#d-evidencias-en-dispositivo-físico-20112026)
 - [ ] Escenario 1 · Modo avión (captura) → [06-pruebas-de-reconexion.md](06-pruebas-de-reconexion.md#escenario-1--modo-avión-crear-y-editar-3-registros-offline)
 - [ ] Escenario 2 · Cierre forzado (captura)
 - [ ] Escenario 3 · Reconexión en la consola nube (captura)

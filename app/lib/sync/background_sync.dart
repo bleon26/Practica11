@@ -32,7 +32,8 @@ Future<bool> runBackgroundSync() async {
   final session = await tokens.readSession();
   if (session == null) return true; // sin sesión: nada que sincronizar
 
-  final db = AppDatabase();
+  // Conexión propia: cerrarla no debe cerrar la que usa la UI si la app está abierta.
+  final db = AppDatabase(singleInstance: false);
   final local = TaskLocalDataSource(db);
   final api = ApiClient(baseUrl: await tokens.readApiUrl(), tokenProvider: () async => session.token);
   try {

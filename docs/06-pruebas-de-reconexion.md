@@ -50,7 +50,7 @@ Preparación: backend corriendo (`npm start`), consola abierta en `http://localh
 
 ## B. Pruebas automáticas
 
-### Backend (`cd backend && npm test`) — **10/10 ✔** (ejecutado el 19/11/2026)
+### Backend (`cd backend && npm test`) — **11/11 ✔** (ejecutado el 20/11/2026)
 
 ```
 ✔ compareIso compara precisión de microsegundos (Dart) contra milisegundos (JS)
@@ -62,8 +62,9 @@ Preparación: backend corriendo (`npm start`), consola abierta en `http://localh
 ✔ Aislamiento: un usuario no puede leer ni sobrescribir tareas de otro
 ✔ PULL incremental por cursor y propagación de borrado lógico
 ✔ Validación: rechaza id no UUID, fechas sin zona y fechas futuras
+✔ Consola nube: login por formulario con cookie firmada HttpOnly
 ✔ Consola nube protegida con Basic Auth
-ℹ tests 10 · pass 10 · fail 0
+ℹ tests 11 · pass 11 · fail 0
 ```
 
 ### App (`cd app && flutter test`)
@@ -77,7 +78,7 @@ Usan **SQLite real** (vía `sqflite_common_ffi`) y un backend en memoria con la 
 | `task_model_test.dart` | UUID v4 offline, marca monótona, `toMap`/`fromMap`, JSON remoto |
 | `widget_test.dart` | Indicador visual offline |
 
-Resultado (19/11/2026, Flutter 3.50.0 / Dart 3.14.0) — **24/24 ✔**:
+Resultado — **24/24 ✔** (19/11/2026 con Flutter 3.50.0; repetido el 20/11/2026 con Flutter 3.47.2):
 
 ```
 00:01 +24: All tests passed!
@@ -85,14 +86,54 @@ Resultado (19/11/2026, Flutter 3.50.0 / Dart 3.14.0) — **24/24 ✔**:
 
 `flutter analyze`: 0 errores y 0 advertencias. Solo quedan avisos *info* de que `package:flutter/material.dart` está deprecado desde Flutter 3.47 en favor de `material_ui`.
 
-App compilada (`flutter build apk --debug`) e instalada en un **Motorola moto g54 5G** por USB con `adb reverse tcp:3000 tcp:3000`.
+App compilada (`flutter build apk --debug`) e instalada en un **Motorola moto g54 5G** por USB con `adb reverse tcp:3000 tcp:3000` (19/11 y 20/11/2026).
 
 ## C. Registro de resultados
 
 | Escenario | Fecha | Dispositivo / emulador | Resultado | Evidencia |
 |---|---|---|---|---|
+| Registro, alta de tarea y PUSH | 20/11/2026 | moto g54 5G | ✔ | Sección D |
+| Servidor caído: datos conservados | 20/11/2026 | moto g54 5G | ✔ | `app-05-servidor-caido.jpg` |
 | 1 · Modo avión | | | | |
 | 2 · Cierre forzado | | | | |
 | 3 · Reconexión (app abierta) | | | | |
 | 3 · Reconexión (app cerrada / WorkManager) | | | | |
 | Extra · Colisión | | | | |
+
+## D. Evidencias en dispositivo físico (20/11/2026)
+
+Motorola moto g54 5G · APK *debug* · backend local en `http://localhost:3000` vía `adb reverse` · usuario de prueba `Brandon2610`.
+
+| Captura | Qué demuestra |
+|---|---|
+| ![Registro](evidencias/app-01-registro.jpg) | **Registro / login.** Pantalla de alta de cuenta contra el backend; el campo «Servidor» permite cambiar la URL sin recompilar. |
+| ![Lista vacía](evidencias/app-02-lista-vacia.jpg) | **Sesión iniciada.** Primer PULL (`GET /tasks/changes?since=0`) sin tareas; el ícono de la barra indica que todo está sincronizado. |
+| ![Nueva tarea](evidencias/app-03-nueva-tarea.jpg) | **Paso 3 · Escritura local.** El diálogo guarda en SQLite y la UI se actualiza por Stream, sin esperar al servidor. |
+| ![Tarea sincronizada](evidencias/app-04-tarea-sincronizada.jpg) | **Paso 6 · PUSH → ACK.** La tarea «prueba» pasó de `v0` naranja (`is_synced = 0`) a `v1` verde (`is_synced = 1`). |
+| ![Servidor caído](evidencias/app-05-servidor-caido.jpg) | **Tolerancia a fallos.** Con el backend apagado el sync falla (`Connection refused`), la app lo informa y **los datos siguen en el dispositivo**. |
+
+**Lado servidor:** la consola nube muestra la misma tarea recibida (`version 1`, UUID generado en el cliente, hora de recepción) y la tabla de colisiones vacía.
+
+![Consola nube](evidencias/nube-01-consola.png)
+
+Bitácora del servidor durante la prueba:
+
+```
+[auth] registro Brandon2610
+POST /auth/register -> 201
+GET /tasks/changes?since=0 -> 200
+[sync] push Brandon2610: {"applied":1}
+POST /tasks/sync -> 200
+```
+
+### Defecto encontrado y corregido durante la prueba
+
+| | |
+|---|---|
+| **Síntoma** | Tras crear una tarea con la app abierta aparecía `DatabaseException(database_closed)` y la tarea se quedaba en `v0` (pendiente). |
+| **Causa** | En Android, `sqflite` comparte por defecto **una sola conexión nativa por archivo** en todo el proceso. La tarea de WorkManager corría en el mismo proceso, abría `offline_first.db` y al terminar llamaba a `db.close()`, cerrando también la conexión de la UI. |
+| **Corrección** | El isolate de segundo plano abre una conexión propia: `AppDatabase(singleInstance: false)` ([`background_sync.dart`](../app/lib/sync/background_sync.dart), [`app_database.dart`](../app/lib/data/local/app_database.dart)). |
+| **Verificación** | `flutter analyze` sin observaciones, 24/24 pruebas, reinstalación en el teléfono: la tarea subió (`applied: 1`) y quedó en `v1`. |
+
+> Pendiente: capturas de los escenarios 1–3 con **modo avión** activo y del escenario de colisión (sección A).
+
